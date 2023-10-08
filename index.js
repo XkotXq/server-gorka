@@ -44,11 +44,58 @@ app.get('/api/topics', (req, res) => {
 })
 
 
-app.get('/api/topics/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const topic = topics.find(topic => topic.id === id)
-    res.json(topic)
+app.get('/api/topics/:id', async (req, res) => {
+  const id = req.params.id;
+  
+  try {
+      const topic = await Topic.findById(id);
+
+      if (!topic) {
+          return res.status(404).json({ message: 'Object not found' });
+      }
+
+      res.json(topic);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+app.delete('/api/topics/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const topic = await Topic.findByIdAndDelete(id);
+    if(!topic){
+      return res.status(404).send("No topic found to delete")
+    }
+    res.send("Topic has been deleted")
+  } catch(error) {
+    console.error('Error deliting topic', error)
+    res.status(500).send('Error deliting topic')
+  }
 })
+app.put('/api/topics/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const { title, code } = req.body;
+    
+    const object = await Topic.findById(id);
+    
+    if (!object) {
+      return res.status(404).json({ message: 'Object not found' });
+    }
+    object.title = title;
+    object.code = code;
+
+    await object.save();
+    
+    res.status(200).json({ message: 'Object updated', object });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 app.post('/api/topics', (req, res) => {
     const body = req.body
     const topic = new Topic({
